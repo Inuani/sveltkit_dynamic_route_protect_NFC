@@ -1,0 +1,19 @@
+type _anon_class_10_1 = 
+ service {
+   add_protected_route: (text) -> ();
+   append_route_cmacs: (text, vec text) -> ();
+   get_cycle_balance: () -> (nat) query;
+   get_route_cmacs: (text) -> (vec text) query;
+   get_route_protection: (text) -> (opt ProtectedRoute) query;
+   is_protected_route: (text) -> (bool) query;
+   update_route_cmacs: (text, vec text) -> ();
+   validate_url_scan: (text, text) -> (bool) query;
+   whoAmI: () -> (principal) query;
+ };
+type ProtectedRoute = 
+ record {
+   cmacs: vec text;
+   path: text;
+   scan_count: nat;
+ };
+service : () -> _anon_class_10_1

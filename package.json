@@ -1,0 +1,36 @@
+{
+	"name": "sveltekit-starter-icacademy-version",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Internet Computer SvelteKit starter application, using import.meta.env.VITE_ variables for configuration.",
+	"keywords": [
+		"Internet Computer",
+		"Motoko",
+		"JavaScript",
+		"Canister",
+		"SvelteKit"
+	],
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prebuild": "npm run generate",
+		"generate": "dfx generate"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.8",
+		"@sveltejs/kit": "^2.5.0",
+		"@sveltejs/vite-plugin-svelte": "^5.0.3",
+		"@types/node": "^22.13.11",
+		"svelte": "^5.25.3",
+		"tslib": "^2.8.1",
+		"typescript": "^5.8.2",
+		"vite": "^6.2.2"
+	},
+	"type": "module",
+	"dependencies": {
+		"@dfinity/agent": "^2.3.0",
+		"@dfinity/candid": "^2.3.0",
+		"@dfinity/principal": "^2.3.0"
+	}
+}
