@@ -5,10 +5,30 @@ import { ic } from '../stores/ic';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 
+function normalizePath(path: string): string {
+  // Remove leading slash if present
+  let normalized = path.startsWith('/') ? path.substring(1) : path;
+  
+  // Remove .html extension if present
+  normalized = normalized.endsWith('.html') ? normalized.slice(0, -5) : normalized;
+
+  console.log('B4',normalized);
+  
+  // Remove trailing slash if present
+  normalized = normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
+
+  console.log('After',normalized);
+  
+  return normalized;
+}
+
 export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return { protected: false };
+
+  const rawPath = url.pathname.substring(1);
+  const currentPath = normalizePath(rawPath);
   
-  const currentPath = url.pathname.substring(1);
+  // const currentPath = url.pathname.substring(1);
   const backend = get(ic);
   
   try {
