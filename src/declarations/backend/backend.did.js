@@ -16,7 +16,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'is_protected_route' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'update_route_cmacs' : IDL.Func([IDL.Text, IDL.Vec(IDL.Text)], [], []),
-    'validate_url_scan' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], ['query']),
+    'validate_url_scan' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'whoAmI' : IDL.Func([], [IDL.Principal], ['query']),
   });
   return _anon_class_10_1;

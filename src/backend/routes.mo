@@ -3,6 +3,8 @@ import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Array "mo:base/Array";
 import Option "mo:base/Option";
+import Debug "mo:base/Debug";
+import Nat "mo:base/Nat";
 import Scan "scan";
 
 module {
@@ -117,6 +119,7 @@ module {
         };
 
         public func verifyRouteAccess(path : Text, url : Text) : Bool {
+             Debug.print("WENT HERE");
             switch (routes.get(path)) {
                 case (?route) {
                     let counter = Scan.scan(route.cmacs_, url, route.scan_count_);

@@ -146,10 +146,10 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
                 print(f"Error changing master key: {ntp.uFR_NT4H_Status2String(status)}")
                 return False
             print(f"Master key changed successfully to: {new_key_str}")
-            cmd = f'python3 scripts/hashed_cmacs.py -k {new_key_str} -u {card_uid} -c 50 -o cmacs.json'
+            cmd = f'python3 scripts/hashed_cmacs.py -k {new_key_str} -u {card_uid} -c 500 -o cmacs.json'
         else:
             # Generate CMACs with default key
-            cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 50 -o cmacs.json'
+            cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 500 -o cmacs.json'
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error generating CMACs: {stderr}")

@@ -43,26 +43,8 @@ shared ({ caller = creator }) actor class () = this {
     return Cycles.balance();
   };
 
- 
- 
-  // public query func validate_url_scan(url : Text, path : Text) : async Bool {
-  //     // Check each protected route
-  //   let routes_array = routes_storage.listProtectedRoutes();
-  //   for ((path, protection) in routes_array.vals()) {
-  //     if (Text.contains(url, #text path)) {
-  //       let hasAccess = routes_storage.verifyRouteAccess(path, req.url);
-  //       let new_request = {
-  //         url = if (hasAccess) {
-  //           return true
-  //         } else {
-  //           return false // 
-  //         };
-        
-  //     };
-  //   };
-  // };
 
-   public query func validate_url_scan(url : Text, path : Text) : async Bool {
+   public shared func validate_url_scan(url : Text, path : Text) : async Bool {
     // First, check if the path is protected
     switch (routes_storage.getRoute(path)) {
       case (null) {

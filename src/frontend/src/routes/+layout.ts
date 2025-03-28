@@ -2,25 +2,23 @@ export const prerender = true;
 import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
 import { ic } from '../stores/ic';
+import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return { protected: false };
   
-  // const ic = createActor();
   const currentPath = url.pathname.substring(1);
+  const backend = get(ic);
   
   try {
     // Check if route is protected
-    const isProtected = await $ic.actor.is_protected_route(currentPath);
-    console.log('HERE', isProtected);
-    
+    const isProtected = await backend.actor.is_protected_route(currentPath);
     if (isProtected) {
-      // Validate the NFC scan
-      const isValid = await ic.actor.validate_url_scan(url.href, currentPath);
+      const isValid = await backend.actor.validate_url_scan(url.href, currentPath);
+      console.log("IS VALID OR NOT", isValid);
       
       if (!isValid) {
-        // Redirect to error page if scan is invalid
         goto('/edge.html');
         return { protected: true, valid: false };
       }
@@ -28,11 +26,9 @@ export const load: LayoutLoad = async ({ url }) => {
       return { protected: true, valid: true };
     }
     
-    // Not a protected route
     return { protected: false };
   } catch (error) {
     console.error('Error checking route protection:', error);
     return { protected: false, error: true };
   }
 }
-

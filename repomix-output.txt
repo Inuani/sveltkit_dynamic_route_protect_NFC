@@ -36,7 +36,7 @@ Notes:
 ------
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: ufr-lib/, src/declarations
+- Files matching these patterns are excluded: ufr-lib/
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 
@@ -58,9 +58,24 @@ src/
     routes.mo
     scan.mo
     sha.mo
+  declarations/
+    backend/
+      backend.did
+      backend.did.d.ts
+      backend.did.js
+      index.d.ts
+      index.js
+    frontend/
+      frontend.did
+      frontend.did.d.ts
+      frontend.did.js
+      index.d.ts
+      index.js
   frontend/
     src/
       routes/
+        page/
+          +page.svelte
         +layout.ts
         +page.svelte
         layout.svelte
@@ -69,12 +84,15 @@ src/
       app.css
       app.d.ts
       app.html
+    static/
+      edge.html
 .eslintignore
 .eslintrc.cjs
 .gitignore
 .npmrc
 .prettierignore
 .prettierrc
+cmacs.json
 dfx.json
 Makefile
 package.json
@@ -1365,14 +1383,6 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
             return False
         print("Uploaded CMACs successfully")
 
-        # Invalidate cache
-        cmd = f'dfx canister call {ic_flag}{canister_name} invalidate_cache'
-        exit_code, stdout, stderr = run_command(cmd)
-        if exit_code != 0:
-            print(f"Error invalidating cache: {stderr}")
-            return False
-        print("Invalidated cache successfully")
-
         return True
 
     except Exception as e:
@@ -1953,23 +1963,1164 @@ module {
 };
 
 ================
+File: src/declarations/backend/backend.did
+================
+type _anon_class_10_1 = 
+ service {
+   add_protected_route: (text) -> ();
+   append_route_cmacs: (text, vec text) -> ();
+   get_cycle_balance: () -> (nat) query;
+   get_route_cmacs: (text) -> (vec text) query;
+   get_route_protection: (text) -> (opt ProtectedRoute) query;
+   is_protected_route: (text) -> (bool) query;
+   update_route_cmacs: (text, vec text) -> ();
+   validate_url_scan: (text, text) -> (bool) query;
+   whoAmI: () -> (principal) query;
+ };
+type ProtectedRoute = 
+ record {
+   cmacs: vec text;
+   path: text;
+   scan_count: nat;
+ };
+service : () -> _anon_class_10_1
+
+================
+File: src/declarations/backend/backend.did.d.ts
+================
+import type { Principal } from '@dfinity/principal';
+import type { ActorMethod } from '@dfinity/agent';
+import type { IDL } from '@dfinity/candid';
+
+export interface ProtectedRoute {
+  'cmacs' : Array<string>,
+  'path' : string,
+  'scan_count' : bigint,
+}
+export interface _anon_class_10_1 {
+  'add_protected_route' : ActorMethod<[string], undefined>,
+  'append_route_cmacs' : ActorMethod<[string, Array<string>], undefined>,
+  'get_cycle_balance' : ActorMethod<[], bigint>,
+  'get_route_cmacs' : ActorMethod<[string], Array<string>>,
+  'get_route_protection' : ActorMethod<[string], [] | [ProtectedRoute]>,
+  'is_protected_route' : ActorMethod<[string], boolean>,
+  'update_route_cmacs' : ActorMethod<[string, Array<string>], undefined>,
+  'validate_url_scan' : ActorMethod<[string, string], boolean>,
+  'whoAmI' : ActorMethod<[], Principal>,
+}
+export interface _SERVICE extends _anon_class_10_1 {}
+export declare const idlFactory: IDL.InterfaceFactory;
+export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];
+
+================
+File: src/declarations/backend/backend.did.js
+================
+export const idlFactory = ({ IDL }) => {
+  const ProtectedRoute = IDL.Record({
+    'cmacs' : IDL.Vec(IDL.Text),
+    'path' : IDL.Text,
+    'scan_count' : IDL.Nat,
+  });
+  const _anon_class_10_1 = IDL.Service({
+    'add_protected_route' : IDL.Func([IDL.Text], [], []),
+    'append_route_cmacs' : IDL.Func([IDL.Text, IDL.Vec(IDL.Text)], [], []),
+    'get_cycle_balance' : IDL.Func([], [IDL.Nat], ['query']),
+    'get_route_cmacs' : IDL.Func([IDL.Text], [IDL.Vec(IDL.Text)], ['query']),
+    'get_route_protection' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(ProtectedRoute)],
+        ['query'],
+      ),
+    'is_protected_route' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'update_route_cmacs' : IDL.Func([IDL.Text, IDL.Vec(IDL.Text)], [], []),
+    'validate_url_scan' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], ['query']),
+    'whoAmI' : IDL.Func([], [IDL.Principal], ['query']),
+  });
+  return _anon_class_10_1;
+};
+export const init = ({ IDL }) => { return []; };
+
+================
+File: src/declarations/backend/index.d.ts
+================
+import type {
+  ActorSubclass,
+  HttpAgentOptions,
+  ActorConfig,
+  Agent,
+} from "@dfinity/agent";
+import type { Principal } from "@dfinity/principal";
+import type { IDL } from "@dfinity/candid";
+
+import { _SERVICE } from './backend.did';
+
+export declare const idlFactory: IDL.InterfaceFactory;
+export declare const canisterId: string;
+
+export declare interface CreateActorOptions {
+  /**
+   * @see {@link Agent}
+   */
+  agent?: Agent;
+  /**
+   * @see {@link HttpAgentOptions}
+   */
+  agentOptions?: HttpAgentOptions;
+  /**
+   * @see {@link ActorConfig}
+   */
+  actorOptions?: ActorConfig;
+}
+
+/**
+ * Intializes an {@link ActorSubclass}, configured with the provided SERVICE interface of a canister.
+ * @constructs {@link ActorSubClass}
+ * @param {string | Principal} canisterId - ID of the canister the {@link Actor} will talk to
+ * @param {CreateActorOptions} options - see {@link CreateActorOptions}
+ * @param {CreateActorOptions["agent"]} options.agent - a pre-configured agent you'd like to use. Supercedes agentOptions
+ * @param {CreateActorOptions["agentOptions"]} options.agentOptions - options to set up a new agent
+ * @see {@link HttpAgentOptions}
+ * @param {CreateActorOptions["actorOptions"]} options.actorOptions - options for the Actor
+ * @see {@link ActorConfig}
+ */
+export declare const createActor: (
+  canisterId: string | Principal,
+  options?: CreateActorOptions
+) => ActorSubclass<_SERVICE>;
+
+/**
+ * Intialized Actor using default settings, ready to talk to a canister using its candid interface
+ * @constructs {@link ActorSubClass}
+ */
+export declare const backend: ActorSubclass<_SERVICE>;
+
+================
+File: src/declarations/backend/index.js
+================
+import { Actor, HttpAgent } from "@dfinity/agent";
+
+// Imports and re-exports candid interface
+import { idlFactory } from "./backend.did.js";
+export { idlFactory } from "./backend.did.js";
+
+/* CANISTER_ID is replaced by webpack based on node environment
+ * Note: canister environment variable will be standardized as
+ * process.env.CANISTER_ID_<CANISTER_NAME_UPPERCASE>
+ * beginning in dfx 0.15.0
+ */
+export const canisterId =
+  process.env.CANISTER_ID_BACKEND;
+
+export const createActor = (canisterId, options = {}) => {
+  const agent = options.agent || new HttpAgent({ ...options.agentOptions });
+
+  if (options.agent && options.agentOptions) {
+    console.warn(
+      "Detected both agent and agentOptions passed to createActor. Ignoring agentOptions and proceeding with the provided agent."
+    );
+  }
+
+  // Fetch root key for certificate validation during development
+  if (process.env.DFX_NETWORK !== "ic") {
+    agent.fetchRootKey().catch((err) => {
+      console.warn(
+        "Unable to fetch root key. Check to ensure that your local replica is running"
+      );
+      console.error(err);
+    });
+  }
+
+  // Creates an actor with using the candid interface and the HttpAgent
+  return Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+    ...options.actorOptions,
+  });
+};
+
+export const backend = canisterId ? createActor(canisterId) : undefined;
+
+================
+File: src/declarations/frontend/frontend.did
+================
+type BatchId = nat;
+type ChunkId = nat;
+type Key = text;
+type Time = int;
+
+type CreateAssetArguments = record {
+  key: Key;
+  content_type: text;
+  max_age: opt nat64;
+  headers: opt vec HeaderField;
+  enable_aliasing: opt bool;
+  allow_raw_access: opt bool;
+};
+
+// Add or change content for an asset, by content encoding
+type SetAssetContentArguments = record {
+  key: Key;
+  content_encoding: text;
+  chunk_ids: vec ChunkId;
+  sha256: opt blob;
+};
+
+// Remove content for an asset, by content encoding
+type UnsetAssetContentArguments = record {
+  key: Key;
+  content_encoding: text;
+};
+
+// Delete an asset
+type DeleteAssetArguments = record {
+  key: Key;
+};
+
+// Reset everything
+type ClearArguments = record {};
+
+type BatchOperationKind = variant {
+  CreateAsset: CreateAssetArguments;
+  SetAssetContent: SetAssetContentArguments;
+
+  SetAssetProperties: SetAssetPropertiesArguments;
+
+  UnsetAssetContent: UnsetAssetContentArguments;
+  DeleteAsset: DeleteAssetArguments;
+
+  Clear: ClearArguments;
+};
+
+type CommitBatchArguments = record {
+  batch_id: BatchId;
+  operations: vec BatchOperationKind
+};
+
+type CommitProposedBatchArguments = record {
+  batch_id: BatchId;
+  evidence: blob;
+};
+
+type ComputeEvidenceArguments = record {
+  batch_id: BatchId;
+  max_iterations: opt nat16
+};
+
+type DeleteBatchArguments = record {
+  batch_id: BatchId;
+};
+
+type HeaderField = record { text; text; };
+
+type HttpRequest = record {
+  method: text;
+  url: text;
+  headers: vec HeaderField;
+  body: blob;
+  certificate_version: opt nat16;
+};
+
+type HttpResponse = record {
+  status_code: nat16;
+  headers: vec HeaderField;
+  body: blob;
+  streaming_strategy: opt StreamingStrategy;
+};
+
+type StreamingCallbackHttpResponse = record {
+  body: blob;
+  token: opt StreamingCallbackToken;
+};
+
+type StreamingCallbackToken = record {
+  key: Key;
+  content_encoding: text;
+  index: nat;
+  sha256: opt blob;
+};
+
+type StreamingStrategy = variant {
+  Callback: record {
+    callback: func (StreamingCallbackToken) -> (opt StreamingCallbackHttpResponse) query;
+    token: StreamingCallbackToken;
+  };
+};
+
+type SetAssetPropertiesArguments = record {
+  key: Key;
+  max_age: opt opt nat64;
+  headers: opt opt vec HeaderField;
+  allow_raw_access: opt opt bool;
+  is_aliased: opt opt bool;
+};
+
+type ConfigurationResponse = record {
+  max_batches: opt nat64;
+  max_chunks: opt nat64;
+  max_bytes: opt nat64;
+};
+
+type ConfigureArguments = record {
+  max_batches: opt opt nat64;
+  max_chunks: opt opt nat64;
+  max_bytes: opt opt nat64;
+};
+
+type Permission = variant {
+  Commit;
+  ManagePermissions;
+  Prepare;
+};
+
+type GrantPermission = record {
+  to_principal: principal;
+  permission: Permission;
+};
+type RevokePermission = record {
+  of_principal: principal;
+  permission: Permission;
+};
+type ListPermitted = record { permission: Permission };
+
+type ValidationResult = variant { Ok : text; Err : text };
+
+type AssetCanisterArgs = variant {
+  Init: InitArgs;
+  Upgrade: UpgradeArgs;
+};
+
+type InitArgs = record {
+  set_permissions: opt SetPermissions;
+};
+
+type UpgradeArgs = record {
+  set_permissions: opt SetPermissions;
+};
+
+/// Sets the list of principals granted each permission.
+type SetPermissions = record {
+  prepare: vec principal;
+  commit: vec principal;
+  manage_permissions: vec principal;
+};
+
+service: (asset_canister_args: opt AssetCanisterArgs) -> {
+  api_version: () -> (nat16) query;
+
+  get: (record {
+    key: Key;
+    accept_encodings: vec text;
+  }) -> (record {
+    content: blob; // may be the entirety of the content, or just chunk index 0
+    content_type: text;
+    content_encoding: text;
+    sha256: opt blob; // sha256 of entire asset encoding, calculated by dfx and passed in SetAssetContentArguments
+    total_length: nat; // all chunks except last have size == content.size()
+  }) query;
+
+  // if get() returned chunks > 1, call this to retrieve them.
+  // chunks may or may not be split up at the same boundaries as presented to create_chunk().
+  get_chunk: (record {
+    key: Key;
+    content_encoding: text;
+    index: nat;
+    sha256: opt blob;  // sha256 of entire asset encoding, calculated by dfx and passed in SetAssetContentArguments
+  }) -> (record { content: blob }) query;
+
+  list : (record {}) -> (vec record {
+    key: Key;
+    content_type: text;
+    encodings: vec record {
+      content_encoding: text;
+      sha256: opt blob; // sha256 of entire asset encoding, calculated by dfx and passed in SetAssetContentArguments
+      length: nat; // Size of this encoding's blob. Calculated when uploading assets.
+      modified: Time;
+    };
+  }) query;
+
+  certified_tree : (record {}) -> (record {
+    certificate: blob;
+    tree: blob;
+  }) query;
+
+  create_batch : (record {}) -> (record { batch_id: BatchId });
+
+  create_chunk: (record { batch_id: BatchId; content: blob }) -> (record { chunk_id: ChunkId });
+  create_chunks: (record { batch_id: BatchId; content: vec blob }) -> (record { chunk_ids: vec ChunkId });
+
+  // Perform all operations successfully, or reject
+  commit_batch: (CommitBatchArguments) -> ();
+
+  // Save the batch operations for later commit
+  propose_commit_batch: (CommitBatchArguments) -> ();
+
+  // Given a batch already proposed, perform all operations successfully, or reject
+  commit_proposed_batch: (CommitProposedBatchArguments) -> ();
+
+  // Compute a hash over the CommitBatchArguments.  Call until it returns Some(evidence).
+  compute_evidence: (ComputeEvidenceArguments) -> (opt blob);
+
+  // Delete a batch that has been created, or proposed for commit, but not yet committed
+  delete_batch: (DeleteBatchArguments) -> ();
+
+  create_asset: (CreateAssetArguments) -> ();
+  set_asset_content: (SetAssetContentArguments) -> ();
+  unset_asset_content: (UnsetAssetContentArguments) -> ();
+
+  delete_asset: (DeleteAssetArguments) -> ();
+
+  clear: (ClearArguments) -> ();
+
+  // Single call to create an asset with content for a single content encoding that
+  // fits within the message ingress limit.
+  store: (record {
+    key: Key;
+    content_type: text;
+    content_encoding: text;
+    content: blob;
+    sha256: opt blob
+  }) -> ();
+
+  http_request: (request: HttpRequest) -> (HttpResponse) query;
+  http_request_streaming_callback: (token: StreamingCallbackToken) -> (opt StreamingCallbackHttpResponse) query;
+
+  authorize: (principal) -> ();
+  deauthorize: (principal) -> ();
+  list_authorized: () -> (vec principal);
+  grant_permission: (GrantPermission) -> ();
+  revoke_permission: (RevokePermission) -> ();
+  list_permitted: (ListPermitted) -> (vec principal);
+  take_ownership: () -> ();
+
+  get_asset_properties : (key: Key) -> (record {
+    max_age: opt nat64;
+    headers: opt vec HeaderField;
+    allow_raw_access: opt bool;
+    is_aliased: opt bool; } ) query;
+  set_asset_properties: (SetAssetPropertiesArguments) -> ();
+
+  get_configuration: () -> (ConfigurationResponse);
+  configure: (ConfigureArguments) -> ();
+
+  validate_grant_permission: (GrantPermission) -> (ValidationResult);
+  validate_revoke_permission: (RevokePermission) -> (ValidationResult);
+  validate_take_ownership: () -> (ValidationResult);
+  validate_commit_proposed_batch: (CommitProposedBatchArguments) -> (ValidationResult);
+  validate_configure: (ConfigureArguments) -> (ValidationResult);
+}
+
+================
+File: src/declarations/frontend/frontend.did.d.ts
+================
+import type { Principal } from '@dfinity/principal';
+import type { ActorMethod } from '@dfinity/agent';
+import type { IDL } from '@dfinity/candid';
+
+export type AssetCanisterArgs = { 'Upgrade' : UpgradeArgs } |
+  { 'Init' : InitArgs };
+export type BatchId = bigint;
+export type BatchOperationKind = {
+    'SetAssetProperties' : SetAssetPropertiesArguments
+  } |
+  { 'CreateAsset' : CreateAssetArguments } |
+  { 'UnsetAssetContent' : UnsetAssetContentArguments } |
+  { 'DeleteAsset' : DeleteAssetArguments } |
+  { 'SetAssetContent' : SetAssetContentArguments } |
+  { 'Clear' : ClearArguments };
+export type ChunkId = bigint;
+export type ClearArguments = {};
+export interface CommitBatchArguments {
+  'batch_id' : BatchId,
+  'operations' : Array<BatchOperationKind>,
+}
+export interface CommitProposedBatchArguments {
+  'batch_id' : BatchId,
+  'evidence' : Uint8Array | number[],
+}
+export interface ComputeEvidenceArguments {
+  'batch_id' : BatchId,
+  'max_iterations' : [] | [number],
+}
+export interface ConfigurationResponse {
+  'max_batches' : [] | [bigint],
+  'max_bytes' : [] | [bigint],
+  'max_chunks' : [] | [bigint],
+}
+export interface ConfigureArguments {
+  'max_batches' : [] | [[] | [bigint]],
+  'max_bytes' : [] | [[] | [bigint]],
+  'max_chunks' : [] | [[] | [bigint]],
+}
+export interface CreateAssetArguments {
+  'key' : Key,
+  'content_type' : string,
+  'headers' : [] | [Array<HeaderField>],
+  'allow_raw_access' : [] | [boolean],
+  'max_age' : [] | [bigint],
+  'enable_aliasing' : [] | [boolean],
+}
+export interface DeleteAssetArguments { 'key' : Key }
+export interface DeleteBatchArguments { 'batch_id' : BatchId }
+export interface GrantPermission {
+  'permission' : Permission,
+  'to_principal' : Principal,
+}
+export type HeaderField = [string, string];
+export interface HttpRequest {
+  'url' : string,
+  'method' : string,
+  'body' : Uint8Array | number[],
+  'headers' : Array<HeaderField>,
+  'certificate_version' : [] | [number],
+}
+export interface HttpResponse {
+  'body' : Uint8Array | number[],
+  'headers' : Array<HeaderField>,
+  'streaming_strategy' : [] | [StreamingStrategy],
+  'status_code' : number,
+}
+export interface InitArgs { 'set_permissions' : [] | [SetPermissions] }
+export type Key = string;
+export interface ListPermitted { 'permission' : Permission }
+export type Permission = { 'Prepare' : null } |
+  { 'ManagePermissions' : null } |
+  { 'Commit' : null };
+export interface RevokePermission {
+  'permission' : Permission,
+  'of_principal' : Principal,
+}
+export interface SetAssetContentArguments {
+  'key' : Key,
+  'sha256' : [] | [Uint8Array | number[]],
+  'chunk_ids' : Array<ChunkId>,
+  'content_encoding' : string,
+}
+export interface SetAssetPropertiesArguments {
+  'key' : Key,
+  'headers' : [] | [[] | [Array<HeaderField>]],
+  'is_aliased' : [] | [[] | [boolean]],
+  'allow_raw_access' : [] | [[] | [boolean]],
+  'max_age' : [] | [[] | [bigint]],
+}
+export interface SetPermissions {
+  'prepare' : Array<Principal>,
+  'commit' : Array<Principal>,
+  'manage_permissions' : Array<Principal>,
+}
+export interface StreamingCallbackHttpResponse {
+  'token' : [] | [StreamingCallbackToken],
+  'body' : Uint8Array | number[],
+}
+export interface StreamingCallbackToken {
+  'key' : Key,
+  'sha256' : [] | [Uint8Array | number[]],
+  'index' : bigint,
+  'content_encoding' : string,
+}
+export type StreamingStrategy = {
+    'Callback' : {
+      'token' : StreamingCallbackToken,
+      'callback' : [Principal, string],
+    }
+  };
+export type Time = bigint;
+export interface UnsetAssetContentArguments {
+  'key' : Key,
+  'content_encoding' : string,
+}
+export interface UpgradeArgs { 'set_permissions' : [] | [SetPermissions] }
+export type ValidationResult = { 'Ok' : string } |
+  { 'Err' : string };
+export interface _SERVICE {
+  'api_version' : ActorMethod<[], number>,
+  'authorize' : ActorMethod<[Principal], undefined>,
+  'certified_tree' : ActorMethod<
+    [{}],
+    { 'certificate' : Uint8Array | number[], 'tree' : Uint8Array | number[] }
+  >,
+  'clear' : ActorMethod<[ClearArguments], undefined>,
+  'commit_batch' : ActorMethod<[CommitBatchArguments], undefined>,
+  'commit_proposed_batch' : ActorMethod<
+    [CommitProposedBatchArguments],
+    undefined
+  >,
+  'compute_evidence' : ActorMethod<
+    [ComputeEvidenceArguments],
+    [] | [Uint8Array | number[]]
+  >,
+  'configure' : ActorMethod<[ConfigureArguments], undefined>,
+  'create_asset' : ActorMethod<[CreateAssetArguments], undefined>,
+  'create_batch' : ActorMethod<[{}], { 'batch_id' : BatchId }>,
+  'create_chunk' : ActorMethod<
+    [{ 'content' : Uint8Array | number[], 'batch_id' : BatchId }],
+    { 'chunk_id' : ChunkId }
+  >,
+  'create_chunks' : ActorMethod<
+    [{ 'content' : Array<Uint8Array | number[]>, 'batch_id' : BatchId }],
+    { 'chunk_ids' : Array<ChunkId> }
+  >,
+  'deauthorize' : ActorMethod<[Principal], undefined>,
+  'delete_asset' : ActorMethod<[DeleteAssetArguments], undefined>,
+  'delete_batch' : ActorMethod<[DeleteBatchArguments], undefined>,
+  'get' : ActorMethod<
+    [{ 'key' : Key, 'accept_encodings' : Array<string> }],
+    {
+      'content' : Uint8Array | number[],
+      'sha256' : [] | [Uint8Array | number[]],
+      'content_type' : string,
+      'content_encoding' : string,
+      'total_length' : bigint,
+    }
+  >,
+  'get_asset_properties' : ActorMethod<
+    [Key],
+    {
+      'headers' : [] | [Array<HeaderField>],
+      'is_aliased' : [] | [boolean],
+      'allow_raw_access' : [] | [boolean],
+      'max_age' : [] | [bigint],
+    }
+  >,
+  'get_chunk' : ActorMethod<
+    [
+      {
+        'key' : Key,
+        'sha256' : [] | [Uint8Array | number[]],
+        'index' : bigint,
+        'content_encoding' : string,
+      },
+    ],
+    { 'content' : Uint8Array | number[] }
+  >,
+  'get_configuration' : ActorMethod<[], ConfigurationResponse>,
+  'grant_permission' : ActorMethod<[GrantPermission], undefined>,
+  'http_request' : ActorMethod<[HttpRequest], HttpResponse>,
+  'http_request_streaming_callback' : ActorMethod<
+    [StreamingCallbackToken],
+    [] | [StreamingCallbackHttpResponse]
+  >,
+  'list' : ActorMethod<
+    [{}],
+    Array<
+      {
+        'key' : Key,
+        'encodings' : Array<
+          {
+            'modified' : Time,
+            'sha256' : [] | [Uint8Array | number[]],
+            'length' : bigint,
+            'content_encoding' : string,
+          }
+        >,
+        'content_type' : string,
+      }
+    >
+  >,
+  'list_authorized' : ActorMethod<[], Array<Principal>>,
+  'list_permitted' : ActorMethod<[ListPermitted], Array<Principal>>,
+  'propose_commit_batch' : ActorMethod<[CommitBatchArguments], undefined>,
+  'revoke_permission' : ActorMethod<[RevokePermission], undefined>,
+  'set_asset_content' : ActorMethod<[SetAssetContentArguments], undefined>,
+  'set_asset_properties' : ActorMethod<
+    [SetAssetPropertiesArguments],
+    undefined
+  >,
+  'store' : ActorMethod<
+    [
+      {
+        'key' : Key,
+        'content' : Uint8Array | number[],
+        'sha256' : [] | [Uint8Array | number[]],
+        'content_type' : string,
+        'content_encoding' : string,
+      },
+    ],
+    undefined
+  >,
+  'take_ownership' : ActorMethod<[], undefined>,
+  'unset_asset_content' : ActorMethod<[UnsetAssetContentArguments], undefined>,
+  'validate_commit_proposed_batch' : ActorMethod<
+    [CommitProposedBatchArguments],
+    ValidationResult
+  >,
+  'validate_configure' : ActorMethod<[ConfigureArguments], ValidationResult>,
+  'validate_grant_permission' : ActorMethod<
+    [GrantPermission],
+    ValidationResult
+  >,
+  'validate_revoke_permission' : ActorMethod<
+    [RevokePermission],
+    ValidationResult
+  >,
+  'validate_take_ownership' : ActorMethod<[], ValidationResult>,
+}
+export declare const idlFactory: IDL.InterfaceFactory;
+export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];
+
+================
+File: src/declarations/frontend/frontend.did.js
+================
+export const idlFactory = ({ IDL }) => {
+  const SetPermissions = IDL.Record({
+    'prepare' : IDL.Vec(IDL.Principal),
+    'commit' : IDL.Vec(IDL.Principal),
+    'manage_permissions' : IDL.Vec(IDL.Principal),
+  });
+  const UpgradeArgs = IDL.Record({
+    'set_permissions' : IDL.Opt(SetPermissions),
+  });
+  const InitArgs = IDL.Record({ 'set_permissions' : IDL.Opt(SetPermissions) });
+  const AssetCanisterArgs = IDL.Variant({
+    'Upgrade' : UpgradeArgs,
+    'Init' : InitArgs,
+  });
+  const ClearArguments = IDL.Record({});
+  const BatchId = IDL.Nat;
+  const Key = IDL.Text;
+  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
+  const SetAssetPropertiesArguments = IDL.Record({
+    'key' : Key,
+    'headers' : IDL.Opt(IDL.Opt(IDL.Vec(HeaderField))),
+    'is_aliased' : IDL.Opt(IDL.Opt(IDL.Bool)),
+    'allow_raw_access' : IDL.Opt(IDL.Opt(IDL.Bool)),
+    'max_age' : IDL.Opt(IDL.Opt(IDL.Nat64)),
+  });
+  const CreateAssetArguments = IDL.Record({
+    'key' : Key,
+    'content_type' : IDL.Text,
+    'headers' : IDL.Opt(IDL.Vec(HeaderField)),
+    'allow_raw_access' : IDL.Opt(IDL.Bool),
+    'max_age' : IDL.Opt(IDL.Nat64),
+    'enable_aliasing' : IDL.Opt(IDL.Bool),
+  });
+  const UnsetAssetContentArguments = IDL.Record({
+    'key' : Key,
+    'content_encoding' : IDL.Text,
+  });
+  const DeleteAssetArguments = IDL.Record({ 'key' : Key });
+  const ChunkId = IDL.Nat;
+  const SetAssetContentArguments = IDL.Record({
+    'key' : Key,
+    'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+    'chunk_ids' : IDL.Vec(ChunkId),
+    'content_encoding' : IDL.Text,
+  });
+  const BatchOperationKind = IDL.Variant({
+    'SetAssetProperties' : SetAssetPropertiesArguments,
+    'CreateAsset' : CreateAssetArguments,
+    'UnsetAssetContent' : UnsetAssetContentArguments,
+    'DeleteAsset' : DeleteAssetArguments,
+    'SetAssetContent' : SetAssetContentArguments,
+    'Clear' : ClearArguments,
+  });
+  const CommitBatchArguments = IDL.Record({
+    'batch_id' : BatchId,
+    'operations' : IDL.Vec(BatchOperationKind),
+  });
+  const CommitProposedBatchArguments = IDL.Record({
+    'batch_id' : BatchId,
+    'evidence' : IDL.Vec(IDL.Nat8),
+  });
+  const ComputeEvidenceArguments = IDL.Record({
+    'batch_id' : BatchId,
+    'max_iterations' : IDL.Opt(IDL.Nat16),
+  });
+  const ConfigureArguments = IDL.Record({
+    'max_batches' : IDL.Opt(IDL.Opt(IDL.Nat64)),
+    'max_bytes' : IDL.Opt(IDL.Opt(IDL.Nat64)),
+    'max_chunks' : IDL.Opt(IDL.Opt(IDL.Nat64)),
+  });
+  const DeleteBatchArguments = IDL.Record({ 'batch_id' : BatchId });
+  const ConfigurationResponse = IDL.Record({
+    'max_batches' : IDL.Opt(IDL.Nat64),
+    'max_bytes' : IDL.Opt(IDL.Nat64),
+    'max_chunks' : IDL.Opt(IDL.Nat64),
+  });
+  const Permission = IDL.Variant({
+    'Prepare' : IDL.Null,
+    'ManagePermissions' : IDL.Null,
+    'Commit' : IDL.Null,
+  });
+  const GrantPermission = IDL.Record({
+    'permission' : Permission,
+    'to_principal' : IDL.Principal,
+  });
+  const HttpRequest = IDL.Record({
+    'url' : IDL.Text,
+    'method' : IDL.Text,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+    'certificate_version' : IDL.Opt(IDL.Nat16),
+  });
+  const StreamingCallbackToken = IDL.Record({
+    'key' : Key,
+    'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+    'index' : IDL.Nat,
+    'content_encoding' : IDL.Text,
+  });
+  const StreamingCallbackHttpResponse = IDL.Record({
+    'token' : IDL.Opt(StreamingCallbackToken),
+    'body' : IDL.Vec(IDL.Nat8),
+  });
+  const StreamingStrategy = IDL.Variant({
+    'Callback' : IDL.Record({
+      'token' : StreamingCallbackToken,
+      'callback' : IDL.Func(
+          [StreamingCallbackToken],
+          [IDL.Opt(StreamingCallbackHttpResponse)],
+          ['query'],
+        ),
+    }),
+  });
+  const HttpResponse = IDL.Record({
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(HeaderField),
+    'streaming_strategy' : IDL.Opt(StreamingStrategy),
+    'status_code' : IDL.Nat16,
+  });
+  const Time = IDL.Int;
+  const ListPermitted = IDL.Record({ 'permission' : Permission });
+  const RevokePermission = IDL.Record({
+    'permission' : Permission,
+    'of_principal' : IDL.Principal,
+  });
+  const ValidationResult = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
+  return IDL.Service({
+    'api_version' : IDL.Func([], [IDL.Nat16], ['query']),
+    'authorize' : IDL.Func([IDL.Principal], [], []),
+    'certified_tree' : IDL.Func(
+        [IDL.Record({})],
+        [
+          IDL.Record({
+            'certificate' : IDL.Vec(IDL.Nat8),
+            'tree' : IDL.Vec(IDL.Nat8),
+          }),
+        ],
+        ['query'],
+      ),
+    'clear' : IDL.Func([ClearArguments], [], []),
+    'commit_batch' : IDL.Func([CommitBatchArguments], [], []),
+    'commit_proposed_batch' : IDL.Func([CommitProposedBatchArguments], [], []),
+    'compute_evidence' : IDL.Func(
+        [ComputeEvidenceArguments],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        [],
+      ),
+    'configure' : IDL.Func([ConfigureArguments], [], []),
+    'create_asset' : IDL.Func([CreateAssetArguments], [], []),
+    'create_batch' : IDL.Func(
+        [IDL.Record({})],
+        [IDL.Record({ 'batch_id' : BatchId })],
+        [],
+      ),
+    'create_chunk' : IDL.Func(
+        [IDL.Record({ 'content' : IDL.Vec(IDL.Nat8), 'batch_id' : BatchId })],
+        [IDL.Record({ 'chunk_id' : ChunkId })],
+        [],
+      ),
+    'create_chunks' : IDL.Func(
+        [
+          IDL.Record({
+            'content' : IDL.Vec(IDL.Vec(IDL.Nat8)),
+            'batch_id' : BatchId,
+          }),
+        ],
+        [IDL.Record({ 'chunk_ids' : IDL.Vec(ChunkId) })],
+        [],
+      ),
+    'deauthorize' : IDL.Func([IDL.Principal], [], []),
+    'delete_asset' : IDL.Func([DeleteAssetArguments], [], []),
+    'delete_batch' : IDL.Func([DeleteBatchArguments], [], []),
+    'get' : IDL.Func(
+        [IDL.Record({ 'key' : Key, 'accept_encodings' : IDL.Vec(IDL.Text) })],
+        [
+          IDL.Record({
+            'content' : IDL.Vec(IDL.Nat8),
+            'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+            'content_type' : IDL.Text,
+            'content_encoding' : IDL.Text,
+            'total_length' : IDL.Nat,
+          }),
+        ],
+        ['query'],
+      ),
+    'get_asset_properties' : IDL.Func(
+        [Key],
+        [
+          IDL.Record({
+            'headers' : IDL.Opt(IDL.Vec(HeaderField)),
+            'is_aliased' : IDL.Opt(IDL.Bool),
+            'allow_raw_access' : IDL.Opt(IDL.Bool),
+            'max_age' : IDL.Opt(IDL.Nat64),
+          }),
+        ],
+        ['query'],
+      ),
+    'get_chunk' : IDL.Func(
+        [
+          IDL.Record({
+            'key' : Key,
+            'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+            'index' : IDL.Nat,
+            'content_encoding' : IDL.Text,
+          }),
+        ],
+        [IDL.Record({ 'content' : IDL.Vec(IDL.Nat8) })],
+        ['query'],
+      ),
+    'get_configuration' : IDL.Func([], [ConfigurationResponse], []),
+    'grant_permission' : IDL.Func([GrantPermission], [], []),
+    'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'http_request_streaming_callback' : IDL.Func(
+        [StreamingCallbackToken],
+        [IDL.Opt(StreamingCallbackHttpResponse)],
+        ['query'],
+      ),
+    'list' : IDL.Func(
+        [IDL.Record({})],
+        [
+          IDL.Vec(
+            IDL.Record({
+              'key' : Key,
+              'encodings' : IDL.Vec(
+                IDL.Record({
+                  'modified' : Time,
+                  'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+                  'length' : IDL.Nat,
+                  'content_encoding' : IDL.Text,
+                })
+              ),
+              'content_type' : IDL.Text,
+            })
+          ),
+        ],
+        ['query'],
+      ),
+    'list_authorized' : IDL.Func([], [IDL.Vec(IDL.Principal)], []),
+    'list_permitted' : IDL.Func([ListPermitted], [IDL.Vec(IDL.Principal)], []),
+    'propose_commit_batch' : IDL.Func([CommitBatchArguments], [], []),
+    'revoke_permission' : IDL.Func([RevokePermission], [], []),
+    'set_asset_content' : IDL.Func([SetAssetContentArguments], [], []),
+    'set_asset_properties' : IDL.Func([SetAssetPropertiesArguments], [], []),
+    'store' : IDL.Func(
+        [
+          IDL.Record({
+            'key' : Key,
+            'content' : IDL.Vec(IDL.Nat8),
+            'sha256' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+            'content_type' : IDL.Text,
+            'content_encoding' : IDL.Text,
+          }),
+        ],
+        [],
+        [],
+      ),
+    'take_ownership' : IDL.Func([], [], []),
+    'unset_asset_content' : IDL.Func([UnsetAssetContentArguments], [], []),
+    'validate_commit_proposed_batch' : IDL.Func(
+        [CommitProposedBatchArguments],
+        [ValidationResult],
+        [],
+      ),
+    'validate_configure' : IDL.Func(
+        [ConfigureArguments],
+        [ValidationResult],
+        [],
+      ),
+    'validate_grant_permission' : IDL.Func(
+        [GrantPermission],
+        [ValidationResult],
+        [],
+      ),
+    'validate_revoke_permission' : IDL.Func(
+        [RevokePermission],
+        [ValidationResult],
+        [],
+      ),
+    'validate_take_ownership' : IDL.Func([], [ValidationResult], []),
+  });
+};
+export const init = ({ IDL }) => {
+  const SetPermissions = IDL.Record({
+    'prepare' : IDL.Vec(IDL.Principal),
+    'commit' : IDL.Vec(IDL.Principal),
+    'manage_permissions' : IDL.Vec(IDL.Principal),
+  });
+  const UpgradeArgs = IDL.Record({
+    'set_permissions' : IDL.Opt(SetPermissions),
+  });
+  const InitArgs = IDL.Record({ 'set_permissions' : IDL.Opt(SetPermissions) });
+  const AssetCanisterArgs = IDL.Variant({
+    'Upgrade' : UpgradeArgs,
+    'Init' : InitArgs,
+  });
+  return [IDL.Opt(AssetCanisterArgs)];
+};
+
+================
+File: src/declarations/frontend/index.d.ts
+================
+import type {
+  ActorSubclass,
+  HttpAgentOptions,
+  ActorConfig,
+  Agent,
+} from "@dfinity/agent";
+import type { Principal } from "@dfinity/principal";
+import type { IDL } from "@dfinity/candid";
+
+import { _SERVICE } from './frontend.did';
+
+export declare const idlFactory: IDL.InterfaceFactory;
+export declare const canisterId: string;
+
+export declare interface CreateActorOptions {
+  /**
+   * @see {@link Agent}
+   */
+  agent?: Agent;
+  /**
+   * @see {@link HttpAgentOptions}
+   */
+  agentOptions?: HttpAgentOptions;
+  /**
+   * @see {@link ActorConfig}
+   */
+  actorOptions?: ActorConfig;
+}
+
+/**
+ * Intializes an {@link ActorSubclass}, configured with the provided SERVICE interface of a canister.
+ * @constructs {@link ActorSubClass}
+ * @param {string | Principal} canisterId - ID of the canister the {@link Actor} will talk to
+ * @param {CreateActorOptions} options - see {@link CreateActorOptions}
+ * @param {CreateActorOptions["agent"]} options.agent - a pre-configured agent you'd like to use. Supercedes agentOptions
+ * @param {CreateActorOptions["agentOptions"]} options.agentOptions - options to set up a new agent
+ * @see {@link HttpAgentOptions}
+ * @param {CreateActorOptions["actorOptions"]} options.actorOptions - options for the Actor
+ * @see {@link ActorConfig}
+ */
+export declare const createActor: (
+  canisterId: string | Principal,
+  options?: CreateActorOptions
+) => ActorSubclass<_SERVICE>;
+
+/**
+ * Intialized Actor using default settings, ready to talk to a canister using its candid interface
+ * @constructs {@link ActorSubClass}
+ */
+export declare const frontend: ActorSubclass<_SERVICE>;
+
+================
+File: src/declarations/frontend/index.js
+================
+import { Actor, HttpAgent } from "@dfinity/agent";
+
+// Imports and re-exports candid interface
+import { idlFactory } from "./frontend.did.js";
+export { idlFactory } from "./frontend.did.js";
+
+/* CANISTER_ID is replaced by webpack based on node environment
+ * Note: canister environment variable will be standardized as
+ * process.env.CANISTER_ID_<CANISTER_NAME_UPPERCASE>
+ * beginning in dfx 0.15.0
+ */
+export const canisterId =
+  process.env.CANISTER_ID_FRONTEND;
+
+export const createActor = (canisterId, options = {}) => {
+  const agent = options.agent || new HttpAgent({ ...options.agentOptions });
+
+  if (options.agent && options.agentOptions) {
+    console.warn(
+      "Detected both agent and agentOptions passed to createActor. Ignoring agentOptions and proceeding with the provided agent."
+    );
+  }
+
+  // Fetch root key for certificate validation during development
+  if (process.env.DFX_NETWORK !== "ic") {
+    agent.fetchRootKey().catch((err) => {
+      console.warn(
+        "Unable to fetch root key. Check to ensure that your local replica is running"
+      );
+      console.error(err);
+    });
+  }
+
+  // Creates an actor with using the candid interface and the HttpAgent
+  return Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+    ...options.actorOptions,
+  });
+};
+
+export const frontend = canisterId ? createActor(canisterId) : undefined;
+
+================
+File: src/frontend/src/routes/page/+page.svelte
+================
+<!-- src/frontend/src/routes/protected/+page.svelte -->
+<script lang="ts">
+    import '../../app.css';
+  </script>
+  
+  <main>
+    <h1>Protected Page</h1>
+    
+    <div class="success-box">
+      <p>🔒 This is a protected page</p>
+      <p>You're seeing this content because you've successfully authenticated with a valid NFC tag.</p>
+    </div>
+    
+    <a href="/" class="button">Back to Home</a>
+  </main>
+  
+  <style>
+    .success-box {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 5px;
+      border-left: 5px solid #28a745;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 1rem;
+    }
+    
+    .button:hover {
+      background-color: #0069d9;
+    }
+
+  </style>
+
+================
 File: src/frontend/src/routes/+layout.ts
 ================
 export const prerender = true;
 import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
-import { createActor } from '../stores/ic';
+import { ic } from '../stores/ic';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return { protected: false };
   
-  const ic = createActor();
+  // const ic = createActor();
   const currentPath = url.pathname.substring(1);
   
   try {
     // Check if route is protected
-    const isProtected = await ic.actor.is_protected_route(currentPath);
+    const isProtected = await $ic.actor.is_protected_route(currentPath);
+    console.log('HERE', isProtected);
     
     if (isProtected) {
       // Validate the NFC scan
@@ -2006,8 +3157,8 @@ File: src/frontend/src/routes/+page.svelte
 		greeting = 'loading ...';
 		try {
 			// Call the IC
-			greeting = await $ic.actor.sayHelloTo(input);
-			loading = false;
+			// greeting = await $ic.actor.sayHelloTo(input);
+			// loading = false;
 
 		} catch (err: unknown) {
 			console.error(err);
@@ -2219,6 +3370,163 @@ File: src/frontend/src/app.html
 </html>
 
 ================
+File: src/frontend/static/edge.html
+================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invalid scan sorry bro, try again with the real tag!</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff007f, #007fff);
+            color: #fff;
+            font-family: 'Arial Black', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            margin-top: 20vh;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        }
+        p {
+            font-size: 1.5rem;
+            margin: 1rem auto;
+            max-width: 800px;
+        }
+        a {
+            text-decoration: none;
+            color: #fff;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #fff;
+            color: #007fff;
+        }
+        .neon {
+            animation: neon-flicker 1.5s infinite;
+        }
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #ff007f,
+                    0 0 30px #ff007f,
+                    0 0 40px #ff007f,
+                    0 0 50px #ff007f,
+                    0 0 75px #ff007f;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .ii-button {
+            background-color: #29ABE2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .ii-button:hover {
+            background-color: #1a8ac0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <h1 class="neon">Invalid scan<br />sorry bro!</h1>
+    <p>try again with the real tag!</p>
+
+
+    <script>
+        // Edgy dynamic background
+        const canvas = document.getElementById('bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        const colors = ['#ff007f', '#007fff', '#ffdd00'];
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 3 + 1;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            initParticles();
+        });
+    </script>
+
+
+</body>
+</html>
+
+================
 File: .eslintignore
 ================
 .DS_Store
@@ -2312,6 +3620,11 @@ File: .prettierrc
 }
 
 ================
+File: cmacs.json
+================
+["164387df8d5ca2c999c4e37b0047714fd329ac89751f6e11a5b0316c918c5d02", "271fe579616ff23dee73d13bed888c5f268a1a8ee94a02ab875152c692fa9095", "f49763596935e6625cb428cbc55ebd848d5583518cf452f9b831e2b340426fed", "b6d72c43bc90e2f7063b31f9caab8848375bc06992161891cd2d725eafeb3801", "00df7d78553140cd8b7dde1c6b6bdc8907ecd1dd94b2b458e9eaa78eae96ed75", "c07c8ca5e39e842cac4baafd9394ec95438cc840dc694bf58235fd194be1a904", "51db40c83c89e4eac2b670ac3d571dc02a9395e93db8557efc3205e542243314", "d9bcaefd4b0c9d5b12a7e8216ae9b75791e5fba8e07b5937abffd1c228a1317e", "4047b0b53cb6f13cd37f6ab5eae70a99b1558532909ffcaa43d85df33c1c0a86", "c1c990b214425414953c1532f09e707843c9b1742786be96467fb7a738736b4b", "80bc14fa0a7ed55f456f58c42525da84e41b2ea31518e62189fe1d2f9f0083c7", "1963a0d58d0afeb3c736d71edb7fd0df7bb5853e7a117d797a18e3c15489de4d", "59d0119745ed947b224ba2cbf5f00e9005abc3972580841a96714100f9bbe397", "290f4e30998fc623d277765b6925359d3a9c3fc7014c8acd1bfb3b0eeed444ad", "b5b526982d10d3ef7938f09ab698df448d5627e37ee843ecebeb55f625e089e1", "5f08a92e3358f1e914644c6a648a8e3f8345decca2be8ec5345f37eaedeed339", "875c6336bf75c454756e3fd48078ba8350b198e3217751787edc6cb2991bf10a", "c8cd657ba4de2882c7d08ff741b5584a9ac0aabc93c86c80c5c9b2862a2abe06", "159cd9f1cd2ca61e866fa8be95df0f1baec49a36b536e6e40e3dad42f701fdd3", "ef74f7b6b37eb94e72cb1b0fd9e8b181a97069f14b3a7ffa9bad16329dffba95", "8c493a70ac349634074a9a63b243f5e953531eb611f1714f00f28d4926527972", "ca99b758b8197ff610e92038bd32d5c5dd054122f57807481f85ce237f430bfa", "cadda1f9c4267724420c357b4d05face604d499b32dd29f73b375063e631fc16", "69ca138d1e166b4853418a85d76fe9d64abdf284937ba936f4dcd293bf0ca090", "332bb0d0a4260398bcd0171591138cd147314de19c83aa1f1aa65115c810a4dc", "295d17a6ea01cce69870ddf76896ec69aa7b8b31fca4c899de118901be39bdc2", "17ee47c491601b73916443b1154579838d9f08b07c23d412a00a54a021acbc10", "5586ead8bcaa4564fb14eb013194a802c6935de8e27c8517f52f03364083b3e9", "228f550826fb58a237fc8ead27e70c6efc8ce94d5815847738e0e175198fd765", "10191a7b355dac160ead2c9f34bd844f708cc25d28981c58abe75a7fdd251add", "2f3e619ba216dfa00673a9cf47d0b8d9d2d7448129d7004738656808d7e68545", "0a06f6308bd1072e0df68513755392c6b475360b4ac5f60b545d736162c8515d", "06bea738474559e44a799756a68dd0166684b84f25e324a6df884fe12227e2c8", "6ed2bf5f47565b3df2cffc8d5dac2ccb2d795059b4c417bac7676f9e8b5ec786", "57f3af7bf5323fce35e64a7bd30c22bd2c9de0eb81c996aeb4590a254963f505", "9f4c4d5e011de8bd0d9b110b81b5aac4a73e2e96e02f275f5811e9998dabc68b", "bb90447460ea6922c46cfef28fba92f2dde2269b9cb09afef3d5226fc99d7fcf", "abbae026bc5f36a1607b7e83dba194aee0f11a01e30a1d08ccb3afe781e5df6a", "c818d147c1f950340c124ceb041d5a9f329c6a3c616ceffcd2558e1b502b94dd", "6af4622935eca6014a68612cdc23517d70e54a5de4d83eecd381be754900c128", "1899d70c8e576fac5bae19804fe6eb5f8b133f0a1be8742fd759896e989bee02", "c3cebb45e5e13c18f21a3603aa69d3b0ad6aa2610f259b780a3154550563618e", "700b3a9527892cf44c2bb9c92a356193bda9b0125a521fef4acc9a8214a17a1f", "c010493cfc48d7f7b4a89a44cae7d2119e8e799fcfddb484e0415d8caad62421", "5a54400386de7bd532bdfd8e28486f7fc3d4cfe4193ac1d2f7ea607a7f8c3c3f", "4bf792160855a2547097a9d62be84486a7d53f986d642281eda94d9c039c7735", "6cdce01306839b2f0c8402b36ccb896939063706f9759f526cef35774403219b", "e348c2655fed738b027b53aabadebe35e228e68c89a6c93b446bbfa12126a8f5", "b4643cb51dbd641bdbf3806248690a0bdc1b1f525482138cd5ceb8bce83e2d88"]
+
+================
 File: dfx.json
 ================
 {
@@ -2376,7 +3689,7 @@ upload_assets:
 	dfx canister call $(if $(filter https://ic0.app,$(REPLICA_URL)),--ic,) $(CANISTER_NAME) invalidate_cache
 
 setup_route_example:
-	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value"
+	python3 scripts/setup_route.py $(CANISTER_ID) page.html --params "key=value"
 
 random_key:
 	python3 scripts/setup_route.py $(CANISTER_ID) page2.html --random-key --params "key=value"
