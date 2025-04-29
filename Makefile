@@ -30,10 +30,10 @@ setup_route_example:
 	python3 scripts/setup_route.py $(CANISTER_ID_FRONTEND) page
 
 random_key:
-	python3 scripts/setup_route.py $(CANISTER_ID) page2.html --random-key --params "key=value"
+	python3 scripts/setup_route.py $(CANISTER_ID_FRONTEND) page2 --random-key --params "key=value"
 
 production_ic:
-	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value" --ic
+	python3 scripts/setup_route.py $(CANISTER_ID_FRONTEND) page1 --params "key=value" --ic
 
 reinstall:
 	dfx canister install $(CANISTER_NAME) --mode=reinstall
